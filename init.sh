@@ -13,7 +13,7 @@ for i in {1..2}; do
         --cpu-shares 1024 \
         --shm-size=1g \
         -p ${i}2375:2375 \
-        buildbox:1.12.1-dind --storage-driver=aufs
+        buildbox:1.12.1-dind
 
     echo "Start SSH container and connect to buildbox ${i}"
     docker run -d \
