@@ -12,6 +12,7 @@
 - `wget`
 
 Recommended build flow:
+
 1. Clone `git` repository
 2. Run `docker build` to build any Docker images: builder, app, test containers.
 
@@ -30,5 +31,5 @@ In addition, it is possible to create *special* `ssh`, that allows to connect wi
 Run `init.sh` script, to start two **buildboxes** and two `ssh` containers connected to these boxes.
 
 ```
-
+$ ./init.sh
 ```
