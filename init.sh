@@ -2,7 +2,22 @@
 
 set -e
 
-for i in {1..2}; do
+[ -z "$NUM_BOXES" ] && NUM_BOXES=3
+[ -z "$DIND_VERSION" ] && DIND_VERSION="1.12.5"
+
+# start Docker registry mirror
+docker run -d --restart=always -p 5000:5000 --name v2_mirror \
+  -v $PWD/rdata:/var/lib/registry \
+  -e REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io \
+  registry:2.5
+
+# get Docker host IP
+DOCKER_HOST_IP=$(docker info --format "{{.Swarm.NodeAddr}}")
+
+# start NUM_BOXES og buildbox instances 
+# connect SSH container to every instance
+# mount `/var/lib/docker` to `./cdata/box-{instance}` folder
+for i in $(seq "${NUM_BOXES}"); do
 
     buildbox_name=buildbox-node-${i}
 
@@ -13,7 +28,8 @@ for i in {1..2}; do
         --cpu-shares 1024 \
         --shm-size=1g \
         -p ${i}2375:2375 \
-        buildbox:1.12.1-dind
+        -v $PWD/cdata/box-${i}:/var/lib/docker \
+        alexeiled/buildbox:${DIND_VERSION}-dind --registry-mirror http://${DOCKER_HOST_IP}:5000
 
     echo "Start SSH container and connect to buildbox ${i}"
     docker run -d \
