@@ -16,7 +16,7 @@ DOCKER_HOST_IP=$(docker info --format "{{.Swarm.NodeAddr}}")
 
 # start NUM_BOXES og buildbox instances 
 # connect SSH container to every instance
-# mount `/var/lib/docker` to `./cdata/box-{instance}` folder
+# ignore (bug): mount `/var/lib/docker` to `./cdata/box-{instance}` folder
 for i in $(seq "${NUM_BOXES}"); do
 
     buildbox_name=buildbox-node-${i}
@@ -28,8 +28,10 @@ for i in $(seq "${NUM_BOXES}"); do
         --cpu-shares 1024 \
         --shm-size=1g \
         -p ${i}2375:2375 \
-        -v $PWD/cdata/box-${i}:/var/lib/docker \
-        alexeiled/buildbox:${DIND_VERSION}-dind --registry-mirror http://${DOCKER_HOST_IP}:5000
+        #-v $PWD/cdata/box-${i}:/var/lib/docker \
+        alexeiled/buildbox:${DIND_VERSION}-dind \
+          --registry-mirror http://${DOCKER_HOST_IP}:5000 \
+          -s overlay2 --storage-opt overlay2.override_kernel_check=1
 
     echo "Start SSH container and connect to buildbox ${i}"
     docker run -d \
