@@ -30,7 +30,9 @@ In addition, it is possible to create *special* `ssh`, that allows to connect wi
 
 ![buildbox diagram](./images/builderbox.png)
 
-Run `init.sh` script, to start two **buildboxes** and two `ssh` containers connected to these boxes.
+## Try it on localhost
+
+Run `init.sh` script, to start Docker registry mirror, three **buildboxes** and three `ssh` containers connected to these boxes.
 
 ```
 $ ./init.sh
