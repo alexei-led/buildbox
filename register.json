@@ -1,0 +1,15 @@
+{
+  "Node": "buildbox-dind-__ID__",
+  "Address": "192.168.99.100",
+  "Service": {
+    "ID": "buildbox-__ID__",
+    "Service": "docker-node",
+    "Tags": [
+      "account_codefresh", 
+      "type_builder",
+      "buildbox"
+    ],
+    "Address": "192.168.99.100",
+    "Port": 2375__ID__
+  }  
+}
