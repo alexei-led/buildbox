@@ -11,3 +11,7 @@ RUN curl -L https://github.com/dnephin/dobi/releases/download/v0.8/dobi-linux > 
 # install docker-compose
 RUN curl -L https://github.com/docker/compose/releases/download/1.9.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose && \
     chmod +x /usr/local/bin/docker-compose
+
+# Add files for CF node registration
+RUN mkdir -p /cf
+COPY register.json register_cf_node.sh services-kv.sh /cf/
