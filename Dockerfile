@@ -1,4 +1,4 @@
-FROM docker:1.12.5-dind 
+FROM docker:1.12.6-dind 
 MAINTAINER Alexei Ledenev <alexei.led@gmail.com>
 
 # install useful tools
