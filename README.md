@@ -47,8 +47,8 @@ $ docker run -d --privileged --name buildbox \
     alexeiled/buildbox
 ```
 
-Or run `init.sh` script, to start a new Docker registry mirror and three **buildboxes** and three `ssh` containers connected to these boxes.
+Or run `local_init.sh` script, to start a new Docker registry mirror and three **buildboxes** and three `ssh` containers connected to these boxes.
 
 ```
-$ ./init.sh
+$ ./local_init.sh
 ```
