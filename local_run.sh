@@ -92,5 +92,4 @@ docker run -d --privileged \
      --tlscert=/etc/docker/ssl/server.pem \
      --tlskey=/etc/docker/ssl/server-key.pem \
      --insecure-registry ${CF_REGISTRY} \
-     -s overlay2 --storage-opt overlay2.override_kernel_check=1 \
-     --userns-remap=default
+     -s overlay2 --storage-opt overlay2.override_kernel_check=1
