@@ -2,7 +2,7 @@
 
 set -e
 
-DIND_VERSION="${DIND_VERSION:=1.13.1}"
+DIND_VERSION="${DIND_VERSION:=1.13.1-dind}"
 
 print_usage() {
   USAGE="$(basename $0) [options] ... \n   
