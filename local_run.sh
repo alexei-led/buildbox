@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DIND_VERSION="${DIND_VERSION:=1.13.1}"
+
 print_usage() {
   USAGE="$(basename $0) [options] ... \n   
              options: -s|--sslcerts - CF SSL certificates location (default: ~/.docker/cfcerts) \n
@@ -62,34 +64,34 @@ MEM_LIMIT=${MEM_LIMIT:-1G}
 DOCKER_SSL_VOL=$(docker ps -aq --filter "name=docker-ssl-vol")
 if [ -z "${DOCKER_SSL_VOL}" ]; then
   docker create -v /etc/docker/ssl --name docker-ssl-vol --entrypoint sh busybox
-  docker cp ${CFCERTS_ROOT}/ca-key.pem docker-ssl-vol:/etc/docker/ssl/
-  docker cp ${CFCERTS_ROOT}/ca.pem docker-ssl-vol:/etc/docker/ssl/
-  docker cp ${CFCERTS_ROOT}/server.pem docker-ssl-vol:/etc/docker/ssl/
-  docker cp ${CFCERTS_ROOT}/server-key.pem docker-ssl-vol:/etc/docker/ssl/
+  docker cp "${CFCERTS_ROOT}/ca-key.pem" docker-ssl-vol:/etc/docker/ssl/
+  docker cp "${CFCERTS_ROOT}/ca.pem" docker-ssl-vol:/etc/docker/ssl/
+  docker cp "${CFCERTS_ROOT}/server.pem" docker-ssl-vol:/etc/docker/ssl/
+  docker cp "${CFCERTS_ROOT}/server-key.pem" docker-ssl-vol:/etc/docker/ssl/
 fi
 
 # create docker volume container for /var/lib/docker, if needed
 DOCKER_VOL=$(docker ps -aq --filter "name=docker-lib-vol-${ID}")
 if [ -z "${DOCKER_VOL}" ]; then
-  docker create -v /var/lib/docker --name docker-lib-vol-${ID} busybox
+  docker create -v /var/lib/docker --name "docker-lib-vol-${ID}" busybox
 fi
 
 # run Docker dind image 
 docker run -d --privileged \
-   --name buildbox-${ID} \
-   --hostname=buildbox-dind-${ID} \
+   --name "buildbox-${ID}" \
+   --hostname "buildbox-dind-${ID}" \
    --shm-size=1g \
    -e "ID=${ID}" \
    -p 2375${ID}:2375 \
-   --net=${CFNET} \
+   --net "${CFNET}" \
    --cpu-shares=512 \
    --cpuset-cpus="${CPU_CORES}" \
    --memory="${MEM_LIMIT}" \
    --volumes-from docker-ssl-vol \
-   --volumes-from docker-lib-vol-${ID} \
-   alexeiled/buildbox:1.12.6-dind \
+   --volumes-from "docker-lib-vol-${ID}" \
+   alexeiled/buildbox:${DIND_VERSION} \
      --tlsverify --tlscacert=/etc/docker/ssl/ca.pem \
      --tlscert=/etc/docker/ssl/server.pem \
      --tlskey=/etc/docker/ssl/server-key.pem \
-     --insecure-registry ${CF_REGISTRY} \
+     --insecure-registry "${CF_REGISTRY}" \
      -s overlay2 --storage-opt overlay2.override_kernel_check=1

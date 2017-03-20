@@ -2,14 +2,16 @@
 
 set -e
 
-[ -z "$NUM_BOXES" ] && NUM_BOXES=3
-[ -z "$DIND_VERSION" ] && DIND_VERSION="1.12.5"
+NUM_BOXES="${NUM_BOXES:=4}"
+DIND_VERSION="${DIND_VERSION:=1.13.1}"
+REG_VERSION="${REG_VERSION:=2.6}"
+
 
 # start Docker registry mirror
 docker run -d --restart=always -p 5000:5000 --name v2_mirror \
-  -v $PWD/rdata:/var/lib/registry \
+  -v "$PWD"/rdata:/var/lib/registry \
   -e REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io \
-  registry:2.5
+  registry:${REG_VERSION}
 
 # get Docker host IP
 DOCKER_HOST_IP=$(docker info --format "{{.Swarm.NodeAddr}}")
@@ -23,19 +25,19 @@ for i in $(seq "${NUM_BOXES}"); do
 
     echo "Start buildbox ${i} dind worker"
     docker run -d --privileged \
-        --name ${buildbox_name} \
-        --hostname=buildbox-host-${i} \
+        --name "${buildbox_name}" \
+        --hostname="buildbox-host-${i}" \
         --cpu-shares 1024 \
         --shm-size=1g \
         -p ${i}2375:2375 \
         alexeiled/buildbox:${DIND_VERSION}-dind \
-          --registry-mirror http://${DOCKER_HOST_IP}:5000 \
+          --registry-mirror "http://${DOCKER_HOST_IP}:5000" \
           -s overlay2 --storage-opt overlay2.override_kernel_check=1
 
     echo "Start SSH container and connect to buildbox ${i}"
     docker run -d \
-    -e CONTAINER=${buildbox_name} -e AUTH_MECHANISM=noAuth \
-    --name sshd-${buildbox_name} \
+    -e CONTAINER="${buildbox_name}" -e AUTH_MECHANISM=noAuth \
+    --name "sshd-${buildbox_name}" \
     -p ${i}0022:22 \
     -p ${i}8022:8022 \
     -v /var/run/docker.sock:/var/run/docker.sock \
