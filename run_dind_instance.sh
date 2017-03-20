@@ -60,7 +60,7 @@ REGISTRY_MIRROR=${REGISTRY_MIRROR:-"http://registry:5000"}
 # Codefresh certificates
 CFCERTS_ROOT=${CFCERTS_ROOT:/etc/ssl/codefresh}
 SRV_TLS_KEY=${CFCERTS_ROOT}/cf-server-key.pem
-SRV_TLS_CERT=${SRV_TLS_KEY}/cf-server-cert.pem
+SRV_TLS_CERT=${CFCERTS_ROOT}/cf-server-cert.pem
 SRV_TLS_CA_CERT=${CFCERTS_ROOT}/cf-ca.pem
 
 # other
