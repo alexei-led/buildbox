@@ -1,15 +1,16 @@
 #!/bin/bash
 
+set -e
+
 DIND_VERSION="${DIND_VERSION:=1.13.1}"
 
 print_usage() {
   USAGE="$(basename $0) [options] ... \n   
-             options: -s|--sslcerts - CF SSL certificates location (default: ~/.docker/cfcerts) \n
-                      -n|--net - CF Docker network (default: codefresh_default) \n
-                      -r|--registry - local registry IP or IP range (default: 192.168.99.1/24) \n
-                      -i|--id runtime id (numeric index) for buildbox container (default: 1) \n
-                      -c|--cpuset-cpus - CPU cores to use, see Docker run reference (default: 0-1) \n
-                      -m|--memory - memory limit; it will be twice bigger: RAM + Swap (default: 1G))"
+             options: -s|--sslcerts - CF SSL certificates location (default: etc/ssl/codefresh) \n
+                      -n|--net - CF Docker network (default: codefresh_net) \n
+                      -i|--id runtime id (numeric index) for buildbox container (default: 0) \n
+                      -c|--cpuset-cpus - CPU cores to use, see Docker run reference (default: 0) \n
+                      -m|--memory - memory limit; it will be twice bigger: RAM + Swap (default: 2G))"
   echo -e "USAGE:\n $USAGE"
 }
 
@@ -32,10 +33,6 @@ do
         CFNET="$value"
         shift
       ;;        
-    -r|--registry)
-        CF_REGISTRY="$value"
-        shift
-      ;;  
     -i|--id)
         ID="$value"
         shift
@@ -52,22 +49,25 @@ do
   shift # past argument or value
 done
 
-CFCERTS_ROOT=${CFCERTS_ROOT:-~/.docker/cfcerts}
-CFNET=${CFNET:-codefresh_default}
-CF_REGISTRY=${CF_REGISTRY:-192.168.99.1/24}
-ID=${ID:-1}
+# Codefresh certificates
+CFCERTS_ROOT=${CFCERTS_ROOT:/etc/ssl/codefresh}
+SRV_TLS_KEY=${CFCERTS_ROOT}/cf-server-key.pem
+SRV_TLS_CERT=${SRV_TLS_KEY}/cf-server-cert.pem
+SRV_TLS_CA_CERT=${CFCERTS_ROOT}/cf-ca.pem
+
+CFNET=${CFNET:-codefresh_net}
+ID=${ID:-0}
 # resource limitation
-CPU_CORES=${CPU_CORES:-0-1}
-MEM_LIMIT=${MEM_LIMIT:-1G}
+CPU_CORES=${CPU_CORES:-0}
+MEM_LIMIT=${MEM_LIMIT:-2G}
 
 # create docker ssl volume if needed
 DOCKER_SSL_VOL=$(docker ps -aq --filter "name=docker-ssl-vol")
 if [ -z "${DOCKER_SSL_VOL}" ]; then
   docker create -v /etc/docker/ssl --name docker-ssl-vol --entrypoint sh busybox
-  docker cp "${CFCERTS_ROOT}/ca-key.pem" docker-ssl-vol:/etc/docker/ssl/
-  docker cp "${CFCERTS_ROOT}/ca.pem" docker-ssl-vol:/etc/docker/ssl/
-  docker cp "${CFCERTS_ROOT}/server.pem" docker-ssl-vol:/etc/docker/ssl/
-  docker cp "${CFCERTS_ROOT}/server-key.pem" docker-ssl-vol:/etc/docker/ssl/
+  docker cp "${SRV_TLS_KEY}" docker-ssl-vol:"${CFCERTS_ROOT}"
+  docker cp "${SRV_TLS_CERT}" docker-ssl-vol:"${CFCERTS_ROOT}"
+  docker cp "${SRV_TLS_CA_CERT}" docker-ssl-vol:"${CFCERTS_ROOT}"
 fi
 
 # create docker volume container for /var/lib/docker, if needed
@@ -76,11 +76,10 @@ if [ -z "${DOCKER_VOL}" ]; then
   docker create -v /var/lib/docker --name "docker-lib-vol-${ID}" busybox
 fi
 
-# run Docker dind image 
+# run Docker dind image with overlay2 FS
 docker run -d --privileged \
    --name "buildbox-${ID}" \
    --hostname "buildbox-dind-${ID}" \
-   --shm-size=1g \
    -e "ID=${ID}" \
    -p 2375${ID}:2375 \
    --net "${CFNET}" \
@@ -89,9 +88,10 @@ docker run -d --privileged \
    --memory="${MEM_LIMIT}" \
    --volumes-from docker-ssl-vol \
    --volumes-from "docker-lib-vol-${ID}" \
+   --restart=always \
    alexeiled/buildbox:${DIND_VERSION} \
-     --tlsverify --tlscacert=/etc/docker/ssl/ca.pem \
-     --tlscert=/etc/docker/ssl/server.pem \
-     --tlskey=/etc/docker/ssl/server-key.pem \
-     --insecure-registry "${CF_REGISTRY}" \
-     -s overlay2 --storage-opt overlay2.override_kernel_check=1
+     --tlsverify \
+     --tlscacert="${SRV_TLS_CA_CERT}" \
+     --tlscert="${SRV_TLS_CERT}"  \
+     --tlskey="${SRV_TLS_KEY}" \
+     --storage-driver overlay2 --storage-opt overlay2.override_kernel_check=1

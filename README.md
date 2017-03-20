@@ -43,7 +43,7 @@ Run single **buildbox** with following command:
 ```
 $ docker run -d --privileged --name buildbox \
     --hostname=buildbox-host \
-    --shm-size=1g -p $12375:2375 \
+    -p $12375:2375 \
     alexeiled/buildbox
 ```
 
