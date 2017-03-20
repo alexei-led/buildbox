@@ -10,6 +10,7 @@ print_usage() {
                       -n|--net - CF Docker network (default: codefresh_net) \n
                       -i|--id runtime id (numeric index) for buildbox container (default: 0) \n
                       -c|--cpuset-cpus - CPU cores to use, see Docker run reference (default: 0) \n
+                      -r|--registry-mirror - Docker registry mirror (default: http://registry:5000) \n
                       -m|--memory - memory limit; it will be twice bigger: RAM + Swap (default: 2G))"
   echo -e "USAGE:\n $USAGE"
 }
@@ -41,6 +42,10 @@ do
         CPU_CORES="$value"
         shift
       ;; 
+    -r|--registry-mirror)
+        REGISTRY_MIRROR="$value"
+        shift
+      ;; 
     -m|--memory)
         MEM_LIMIT="$value"
         shift
@@ -49,14 +54,19 @@ do
   shift # past argument or value
 done
 
+# Registry mirror
+REGISTRY_MIRROR=${REGISTRY_MIRROR:-"http://registry:5000"}
+
 # Codefresh certificates
 CFCERTS_ROOT=${CFCERTS_ROOT:/etc/ssl/codefresh}
 SRV_TLS_KEY=${CFCERTS_ROOT}/cf-server-key.pem
 SRV_TLS_CERT=${SRV_TLS_KEY}/cf-server-cert.pem
 SRV_TLS_CA_CERT=${CFCERTS_ROOT}/cf-ca.pem
 
+# other
 CFNET=${CFNET:-codefresh_net}
 ID=${ID:-0}
+
 # resource limitation
 CPU_CORES=${CPU_CORES:-0}
 MEM_LIMIT=${MEM_LIMIT:-2G}
@@ -94,4 +104,5 @@ docker run -d --privileged \
      --tlscacert="${SRV_TLS_CA_CERT}" \
      --tlscert="${SRV_TLS_CERT}"  \
      --tlskey="${SRV_TLS_KEY}" \
+     --registry-mirror="${REGISTRY_MIRROR}" \
      --storage-driver overlay2 --storage-opt overlay2.override_kernel_check=1
