@@ -28,7 +28,6 @@ for i in $(seq "${NUM_BOXES}"); do
         --cpu-shares 1024 \
         --shm-size=1g \
         -p ${i}2375:2375 \
-        #-v $PWD/cdata/box-${i}:/var/lib/docker \
         alexeiled/buildbox:${DIND_VERSION}-dind \
           --registry-mirror http://${DOCKER_HOST_IP}:5000 \
           -s overlay2 --storage-opt overlay2.override_kernel_check=1
